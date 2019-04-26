@@ -2,9 +2,12 @@
   "name": "aes128gcm-stream",
   "version": "0.1.0-SNAPSHOT",
   "description": "128-bit AES-GCM encryption stream",
-  "main": "src/ece.js",
+  "main": "dist/src/ece.js",
+  "types": "dist/src/ece.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "mocha --require ts-node/register test/**/*.ts"
   },
   "repository": {
     "type": "git",
@@ -15,5 +18,14 @@
   "bugs": {
     "url": "https://github.com/nwtgck/aes128gcm-stream-npm/issues"
   },
-  "homepage": "https://github.com/nwtgck/aes128gcm-stream-npm#readme"
+  "homepage": "https://github.com/nwtgck/aes128gcm-stream-npm#readme",
+  "devDependencies": {
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^10.14.5",
+    "@types/power-assert": "^1.5.0",
+    "mocha": "^6.1.4",
+    "power-assert": "^1.6.1",
+    "ts-node": "^8.1.0",
+    "typescript": "^3.4.5"
+  }
 }

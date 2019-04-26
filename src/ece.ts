@@ -10,14 +10,24 @@ export const ECE_RECORD_SIZE = 1024 * 64;
 
 const encoder = new TextEncoder();
 
-function generateSalt(len) {
+function generateSalt(len: number): Buffer {
   const randSalt = new Uint8Array(len);
   crypto.getRandomValues(randSalt);
-  return randSalt.buffer;
+  return randSalt.buffer as Buffer;
 }
 
-class ECETransformer {
-  constructor(mode, ikm, rs, salt) {
+class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
+  mode: 'encrypt' | 'decrypt';
+  prevChunk: Buffer;
+  seq: number;
+  firstchunk: boolean;
+  rs: number;
+  ikm: ArrayBuffer;
+  salt?: Uint8Array;
+  nonceBase: Buffer;
+  key: CryptoKey;
+
+  constructor(mode: 'encrypt' | 'decrypt', ikm: Uint8Array, rs: number, salt?: Uint8Array) {
     this.mode = mode;
     this.prevChunk;
     this.seq = 0;
@@ -27,7 +37,7 @@ class ECETransformer {
     this.salt = salt;
   }
 
-  async generateKey() {
+  async generateKey(): Promise<CryptoKey> {
     const inputKey = await crypto.subtle.importKey(
       'raw',
       this.ikm,
@@ -42,7 +52,7 @@ class ECETransformer {
         salt: this.salt,
         info: encoder.encode('Content-Encoding: aes128gcm\0'),
         hash: 'SHA-256'
-      },
+      } as any, // TODO: Don't use any
       inputKey,
       {
         name: 'AES-GCM',
@@ -53,7 +63,7 @@ class ECETransformer {
     );
   }
 
-  async generateNonceBase() {
+  async generateNonceBase(): Promise<Buffer> {
     const inputKey = await crypto.subtle.importKey(
       'raw',
       this.ikm,
@@ -70,7 +80,7 @@ class ECETransformer {
           salt: this.salt,
           info: encoder.encode('Content-Encoding: nonce\0'),
           hash: 'SHA-256'
-        },
+        } as any,  // TODO: Don't use any
         inputKey,
         {
           name: 'AES-GCM',
@@ -84,7 +94,7 @@ class ECETransformer {
     return Buffer.from(base.slice(0, NONCE_LENGTH));
   }
 
-  generateNonce(seq) {
+  generateNonce(seq: number): Buffer {
     if (seq > 0xffffffff) {
       throw new Error('record sequence number exceeds limit');
     }
@@ -96,7 +106,7 @@ class ECETransformer {
     return nonce;
   }
 
-  pad(data, isLast) {
+  pad(data: Uint8Array, isLast: boolean): Buffer {
     const len = data.length;
     if (len + TAG_LENGTH >= this.rs) {
       throw new Error('data too large for record size');
@@ -114,7 +124,7 @@ class ECETransformer {
     }
   }
 
-  unpad(data, isLast) {
+  unpad(data: Uint8Array, isLast: boolean): Uint8Array {
     for (let i = data.length - 1; i >= 0; i--) {
       if (data[i]) {
         if (isLast) {
@@ -132,18 +142,19 @@ class ECETransformer {
     throw new Error('no delimiter found');
   }
 
-  createHeader() {
+  createHeader(): Buffer {
     const nums = Buffer.alloc(5);
     nums.writeUIntBE(this.rs, 0, 4);
     nums.writeUIntBE(0, 4, 1);
-    return Buffer.concat([Buffer.from(this.salt), nums]);
+    return Buffer.concat([Buffer.from(this.salt as Uint8Array), nums]);
   }
 
-  readHeader(buffer) {
+  readHeader(buffer: Buffer) {
     if (buffer.length < 21) {
       throw new Error('chunk too small for reading header');
     }
-    const header = {};
+    // TODO: Don't use any
+    const header: any = {};
     header.salt = buffer.buffer.slice(0, KEY_LENGTH);
     header.rs = buffer.readUIntBE(KEY_LENGTH, 4);
     const idlen = buffer.readUInt8(KEY_LENGTH + 4);
@@ -151,7 +162,7 @@ class ECETransformer {
     return header;
   }
 
-  async encryptRecord(buffer, seq, isLast) {
+  async encryptRecord(buffer: Buffer, seq: number, isLast: boolean): Promise<Buffer> {
     const nonce = this.generateNonce(seq);
     const encrypted = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv: nonce },
@@ -161,7 +172,7 @@ class ECETransformer {
     return Buffer.from(encrypted);
   }
 
-  async decryptRecord(buffer, seq, isLast) {
+  async decryptRecord(buffer: Buffer, seq: number, isLast: boolean): Promise<Uint8Array> {
     const nonce = this.generateNonce(seq);
     const data = await crypto.subtle.decrypt(
       {
@@ -176,7 +187,7 @@ class ECETransformer {
     return this.unpad(Buffer.from(data), isLast);
   }
 
-  async start(controller) {
+  async start(controller: TransformStreamDefaultController<Uint8Array>) {
     if (this.mode === MODE_ENCRYPT) {
       this.key = await this.generateKey();
       this.nonceBase = await this.generateNonceBase();
@@ -186,7 +197,7 @@ class ECETransformer {
     }
   }
 
-  async transformPrevChunk(isLast, controller) {
+  async transformPrevChunk(isLast: boolean, controller: TransformStreamDefaultController<Uint8Array>) {
     if (this.mode === MODE_ENCRYPT) {
       controller.enqueue(
         await this.encryptRecord(this.prevChunk, this.seq, isLast)
@@ -209,7 +220,7 @@ class ECETransformer {
     }
   }
 
-  async transform(chunk, controller) {
+  async transform(chunk: Uint8Array, controller: TransformStreamDefaultController<Uint8Array>) {
     if (!this.firstchunk) {
       await this.transformPrevChunk(false, controller);
     }
@@ -217,7 +228,7 @@ class ECETransformer {
     this.prevChunk = Buffer.from(chunk.buffer);
   }
 
-  async flush(controller) {
+  async flush(controller: TransformStreamDefaultController<Uint8Array>) {
     //console.log('ece stream ends')
     if (this.prevChunk) {
       await this.transformPrevChunk(true, controller);
@@ -225,8 +236,14 @@ class ECETransformer {
   }
 }
 
-class StreamSlicer {
-  constructor(rs, mode) {
+class StreamSlicer implements Transformer<Uint8Array, Uint8Array>{
+  rs: number;
+  mode: 'encrypt' | 'decrypt';
+  chunkSize: number;
+  partialChunk: Uint8Array;
+  offset: number;
+
+  constructor(rs: number, mode: 'encrypt' | 'decrypt') {
     this.mode = mode;
     this.rs = rs;
     this.chunkSize = mode === MODE_ENCRYPT ? rs - 17 : 21;
@@ -234,7 +251,7 @@ class StreamSlicer {
     this.offset = 0;
   }
 
-  send(buf, controller) {
+  send(buf: Uint8Array, controller: TransformStreamDefaultController<Uint8Array>) {
     controller.enqueue(buf);
     if (this.chunkSize === 21 && this.mode === MODE_DECRYPT) {
       this.chunkSize = this.rs;
@@ -244,7 +261,7 @@ class StreamSlicer {
   }
 
   //reslice input into record sized chunks
-  transform(chunk, controller) {
+  transform(chunk: Uint8Array, controller: TransformStreamDefaultController<Uint8Array>) {
     //console.log('Received chunk with %d bytes.', chunk.byteLength)
     let i = 0;
 
@@ -274,7 +291,7 @@ class StreamSlicer {
     }
   }
 
-  flush(controller) {
+  flush(controller: TransformStreamDefaultController<Uint8Array>) {
     if (this.offset > 0) {
       controller.enqueue(this.partialChunk.slice(0, this.offset));
     }
@@ -288,8 +305,8 @@ rs:   int containing record size, optional
 salt: ArrayBuffer containing salt of KEY_LENGTH length, optional
 */
 export function encryptStream(
-  input,
-  key,
+  input: ReadableStream<Uint8Array>,
+  key: Uint8Array,
   rs = ECE_RECORD_SIZE,
   salt = generateSalt(KEY_LENGTH)
 ) {
@@ -303,7 +320,7 @@ input: a ReadableStream containing data to be transformed
 key:  Uint8Array containing key of size KEY_LENGTH
 rs:   int containing record size, optional
 */
-export function decryptStream(input, key, rs = ECE_RECORD_SIZE) {
+export function decryptStream(input: ReadableStream<Uint8Array>, key: Uint8Array, rs = ECE_RECORD_SIZE) {
   const mode = 'decrypt';
   const inputStream = transformStream(input, new StreamSlicer(rs, mode));
   return transformStream(inputStream, new ECETransformer(mode, key, rs));

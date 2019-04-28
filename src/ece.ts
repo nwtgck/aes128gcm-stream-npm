@@ -10,10 +10,10 @@ export const ECE_RECORD_SIZE = 1024 * 64;
 
 const encoder = new TextEncoder();
 
-function generateSalt(len: number): Buffer {
+function generateSalt(len: number): ArrayBuffer {
   const randSalt = new Uint8Array(len);
   crypto.getRandomValues(randSalt);
-  return randSalt.buffer as Buffer;
+  return randSalt.buffer;
 }
 
 class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
@@ -23,11 +23,11 @@ class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
   firstchunk: boolean;
   rs: number;
   ikm: ArrayBuffer;
-  salt?: Uint8Array;
+  salt?: ArrayBuffer;
   nonceBase: Buffer;
   key: CryptoKey;
 
-  constructor(mode: 'encrypt' | 'decrypt', ikm: Uint8Array, rs: number, salt?: Uint8Array) {
+  constructor(mode: 'encrypt' | 'decrypt', ikm: Uint8Array, rs: number, salt?: ArrayBuffer) {
     this.mode = mode;
     this.prevChunk;
     this.seq = 0;
@@ -143,10 +143,11 @@ class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
   }
 
   createHeader(): Buffer {
+    if (this.salt === undefined) throw new Error('salt is undefined');
     const nums = Buffer.alloc(5);
     nums.writeUIntBE(this.rs, 0, 4);
     nums.writeUIntBE(0, 4, 1);
-    return Buffer.concat([Buffer.from(this.salt as Uint8Array), nums]);
+    return Buffer.concat([Buffer.from(this.salt), nums]);
   }
 
   readHeader(buffer: Buffer) {
@@ -307,8 +308,8 @@ salt: ArrayBuffer containing salt of KEY_LENGTH length, optional
 export function encryptStream(
   input: ReadableStream<Uint8Array>,
   key: Uint8Array,
-  rs = ECE_RECORD_SIZE,
-  salt = generateSalt(KEY_LENGTH)
+  rs: number = ECE_RECORD_SIZE,
+  salt: ArrayBuffer = generateSalt(KEY_LENGTH)
 ) {
   const mode = 'encrypt';
   const inputStream = transformStream(input, new StreamSlicer(rs, mode));
@@ -320,7 +321,7 @@ input: a ReadableStream containing data to be transformed
 key:  Uint8Array containing key of size KEY_LENGTH
 rs:   int containing record size, optional
 */
-export function decryptStream(input: ReadableStream<Uint8Array>, key: Uint8Array, rs = ECE_RECORD_SIZE) {
+export function decryptStream(input: ReadableStream<Uint8Array>, key: Uint8Array, rs: number = ECE_RECORD_SIZE) {
   const mode = 'decrypt';
   const inputStream = transformStream(input, new StreamSlicer(rs, mode));
   return transformStream(inputStream, new ECETransformer(mode, key, rs));

@@ -13,7 +13,7 @@ I appreciate that contributors created that streaming encryption feature, so I p
 Install by npm from this GitHub repository
 
 ```bash
-npm install -S git+https://github.com/nwtgck/aes128gcm-stream-npm#7274efdb89f86ffd51298a3d671093b28f8e8427
+npm install -S git+https://github.com/nwtgck/aes128gcm-stream-npm#v0.1.0
 ```
 
 ## Usage

@@ -1,6 +1,20 @@
 import {encryptStream, decryptStream}  from '../src/ece';
 import * as assert from 'power-assert';
 
+async function getWholeString(readableStream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = readableStream.getReader();
+  const decoder = new TextDecoder();
+  let text: string = '';
+  while(true) {
+    const {done, value} = await reader.read();
+    if (done) {
+      break;
+    }
+    text += decoder.decode(value);
+  }
+  return text;
+}
+
 function createSimpleReadableStream(): ReadableStream<Uint8Array> {
   return new ReadableStream({
     start: (controller) => {
@@ -29,17 +43,8 @@ describe('ece', () => {
       encryptedStream,
       key
     );
-    //
-    const reader = decryptedStream.getReader();
-    const decoder = new TextDecoder();
-    let text: string = '';
-    while(true) {
-      const {done, value} = await reader.read();
-      text += decoder.decode(value);
-      if (done) {
-        break;
-      }
-    }
-    assert.equal(text, 'ABCabc');
+    // Get as a text
+    const text = await getWholeString(decryptedStream);
+    assert.strictEqual(text, 'ABCabc');
   });
 });

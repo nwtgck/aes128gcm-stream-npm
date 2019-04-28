@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
-    "test": "mocha --require ts-node/register test/**/*.ts"
+    "test": "karma start"
   },
   "repository": {
     "type": "git",
@@ -20,12 +20,16 @@
   },
   "homepage": "https://github.com/nwtgck/aes128gcm-stream-npm#readme",
   "devDependencies": {
-    "@types/mocha": "^5.2.6",
+    "@types/jasmine": "^2.5.54",
     "@types/node": "^10.14.5",
     "@types/power-assert": "^1.5.0",
-    "mocha": "^6.1.4",
+    "jasmine-core": "^3.3.0",
+    "karma": "^3.1.4",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-cli": "^1.0.1",
+    "karma-jasmine": "^1.0.2",
+    "karma-typescript": "^4.0.0",
     "power-assert": "^1.6.1",
-    "ts-node": "^8.1.0",
     "typescript": "^3.4.5"
   }
 }

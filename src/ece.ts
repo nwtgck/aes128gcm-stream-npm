@@ -16,6 +16,12 @@ function generateSalt(len: number): ArrayBuffer {
   return randSalt.buffer;
 }
 
+type Header = {
+  salt: ArrayBuffer,
+  rs: number,
+  length: number
+};
+
 class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
   mode: 'encrypt' | 'decrypt';
   prevChunk: Buffer;
@@ -150,12 +156,11 @@ class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
     return Buffer.concat([Buffer.from(this.salt), nums]);
   }
 
-  readHeader(buffer: Buffer) {
+  readHeader(buffer: Buffer): Header {
     if (buffer.length < 21) {
       throw new Error('chunk too small for reading header');
     }
-    // TODO: Don't use any
-    const header: any = {};
+    const header: Header = {} as Header;
     header.salt = buffer.buffer.slice(0, KEY_LENGTH);
     header.rs = buffer.readUIntBE(KEY_LENGTH, 4);
     const idlen = buffer.readUInt8(KEY_LENGTH + 4);

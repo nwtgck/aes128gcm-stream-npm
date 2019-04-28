@@ -1,11 +1,45 @@
-// TODO: You should change this content.
-
-// import {hoge}  from '../src';
+import {encryptStream, decryptStream}  from '../src/ece';
 import * as assert from 'power-assert';
 
-describe('hoge', () => {
-  it('1 should be 1', () => {
-    assert.equal(1, 1);
-    console.log(window);
+function createSimpleReadableStream(): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    start: (controller) => {
+      // "ABC"
+      controller.enqueue(new Uint8Array([65, 66, 67]));
+      // "abc"
+      controller.enqueue(new Uint8Array([97, 98, 99]));
+      controller.close();
+    }
+  });
+}
+
+describe('ece', () => {
+  it('should encrypt and decrypt', async () => {
+    // Create a simple readable
+    const readableStream: ReadableStream<Uint8Array> = createSimpleReadableStream();
+    // Generate random key
+    const key: Uint8Array = crypto.getRandomValues(new Uint8Array(16));
+    // Encrypt
+    const encryptedStream: ReadableStream<Uint8Array> = encryptStream(
+      readableStream,
+      key,
+    );
+    // Decrypt
+    const decryptedStream: ReadableStream<Uint8Array> = decryptStream(
+      encryptedStream,
+      key
+    );
+    //
+    const reader = decryptedStream.getReader();
+    const decoder = new TextDecoder();
+    let text: string = '';
+    while(true) {
+      const {done, value} = await reader.read();
+      text += decoder.decode(value);
+      if (done) {
+        break;
+      }
+    }
+    assert.equal(text, 'ABCabc');
   });
 });

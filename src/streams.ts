@@ -1,20 +1,21 @@
 /* global ReadableStream TransformStream */
 
-export function transformStream(readable, transformer, oncancel) {
+export function transformStream(readable: ReadableStream<Uint8Array>, transformer: Transformer<Uint8Array, Uint8Array>, oncancel?: ReadableStreamErrorCallback): ReadableStream<Uint8Array> {
   try {
     return readable.pipeThrough(new TransformStream(transformer));
   } catch (e) {
     const reader = readable.getReader();
-    return new ReadableStream({
+    return new ReadableStream<Uint8Array>({
       start(controller) {
         if (transformer.start) {
-          return transformer.start(controller);
+          // TODO: Don't use any
+          return transformer.start(controller as any);
         }
       },
       async pull(controller) {
         let enqueued = false;
         const wrappedController = {
-          enqueue(d) {
+          enqueue(d: Uint8Array): void {
             enqueued = true;
             controller.enqueue(d);
           }
@@ -23,11 +24,14 @@ export function transformStream(readable, transformer, oncancel) {
           const data = await reader.read();
           if (data.done) {
             if (transformer.flush) {
-              await transformer.flush(controller);
+              // TODO: Don't use any
+              await transformer.flush(controller as any);
             }
             return controller.close();
           }
-          await transformer.transform(data.value, wrappedController);
+          // TODO: Don't use any
+          // @ts-ignore
+          await transformer.transform(data.value, wrappedController as any);
         }
       },
       cancel(reason) {
@@ -40,14 +44,18 @@ export function transformStream(readable, transformer, oncancel) {
   }
 }
 
-class BlobStreamController {
-  constructor(blob, size) {
+class BlobStreamController implements UnderlyingSource<Uint8Array> {
+  blob: Blob;
+  index: number;
+  chunkSize: number;
+
+  constructor(blob: Blob, size: number) {
     this.blob = blob;
     this.index = 0;
     this.chunkSize = size || 1024 * 64;
   }
 
-  pull(controller) {
+  pull(controller: ReadableStreamDefaultController<Uint8Array>): Promise<void> {
     return new Promise((resolve, reject) => {
       const bytesLeft = this.blob.size - this.index;
       if (bytesLeft <= 0) {
@@ -58,7 +66,7 @@ class BlobStreamController {
       const slice = this.blob.slice(this.index, this.index + size);
       const reader = new FileReader();
       reader.onload = () => {
-        controller.enqueue(new Uint8Array(reader.result));
+        controller.enqueue(new Uint8Array(reader.result as ArrayBuffer));
         resolve();
       };
       reader.onerror = reject;
@@ -68,12 +76,16 @@ class BlobStreamController {
   }
 }
 
-export function blobStream(blob, size) {
-  return new ReadableStream(new BlobStreamController(blob, size));
+export function blobStream(blob: Blob, size: number): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>(new BlobStreamController(blob, size));
 }
 
-class ConcatStreamController {
-  constructor(streams) {
+class ConcatStreamController implements UnderlyingSource<Uint8Array> {
+  streams: ReadableStream<Uint8Array>[];
+  index: number;
+  reader: ReadableStreamDefaultReader | null;
+
+  constructor(streams: ReadableStream<Uint8Array>[]) {
     this.streams = streams;
     this.index = 0;
     this.reader = null;
@@ -85,7 +97,7 @@ class ConcatStreamController {
     this.reader = next && next.getReader();
   }
 
-  async pull(controller) {
+  async pull(controller: ReadableStreamDefaultController<Uint8Array>): Promise<void> {
     if (!this.reader) {
       return controller.close();
     }
@@ -98,6 +110,6 @@ class ConcatStreamController {
   }
 }
 
-export function concatStream(streams) {
+export function concatStream(streams: ReadableStream<Uint8Array>[]): ReadableStream<Uint8Array> {
   return new ReadableStream(new ConcatStreamController(streams));
 }

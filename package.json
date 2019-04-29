@@ -1,6 +1,6 @@
 {
   "name": "aes128gcm-stream",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "128-bit AES-GCM encryption stream",
   "main": "dist/src/ece.js",
   "types": "dist/src/ece.d.ts",
@@ -31,5 +31,8 @@
     "karma-typescript": "^4.0.0",
     "power-assert": "^1.6.1",
     "typescript": "^3.4.5"
+  },
+  "dependencies": {
+    "web-streams-polyfill": "^2.0.3"
   }
 }

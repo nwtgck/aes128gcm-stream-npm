@@ -1,4 +1,5 @@
 /* global ReadableStream TransformStream */
+import 'web-streams-polyfill/dist/polyfill';
 
 export function transformStream(readable: ReadableStream<Uint8Array>, transformer: Transformer<Uint8Array, Uint8Array>, oncancel?: ReadableStreamErrorCallback): ReadableStream<Uint8Array> {
   try {

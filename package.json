@@ -26,7 +26,7 @@
     "jasmine-core": "^3.4.0",
     "karma": "^4.1.0",
     "karma-chrome-launcher": "^2.2.0",
-    "karma-cli": "^1.0.1",
+    "karma-cli": "^2.0.0",
     "karma-jasmine": "^1.0.2",
     "karma-typescript": "^4.0.0",
     "power-assert": "^1.6.1",

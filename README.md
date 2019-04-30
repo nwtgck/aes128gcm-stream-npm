@@ -1,7 +1,7 @@
 # aes128gcm-stream
 [![Build Status](https://travis-ci.com/nwtgck/aes128gcm-stream-npm.svg?branch=develop)](https://travis-ci.com/nwtgck/aes128gcm-stream-npm)
 
-128-bit AES-GCM Encryption Stream for Web Browsers used
+128-bit AES-GCM Encryption Stream for Web Browsers
 
 ## Thanks for Firefox Send project
 
@@ -13,7 +13,7 @@ I appreciate that contributors created that streaming encryption feature, so I p
 Install by npm from this GitHub repository
 
 ```bash
-npm install -S git+https://github.com/nwtgck/aes128gcm-stream-npm#v0.1.2
+npm install -S git+https://github.com/nwtgck/aes128gcm-stream-npm#v0.1.3
 ```
 
 ## Usage

@@ -31,8 +31,5 @@
     "karma-typescript": "^4.0.0",
     "power-assert": "^1.6.1",
     "typescript": "^3.4.5"
-  },
-  "dependencies": {
-    "web-streams-polyfill": "^2.0.3"
   }
 }

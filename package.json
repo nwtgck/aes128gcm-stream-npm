@@ -28,7 +28,7 @@
     "karma-chrome-launcher": "^2.2.0",
     "karma-cli": "^2.0.0",
     "karma-jasmine": "^2.0.1",
-    "karma-typescript": "^4.0.0",
+    "karma-typescript": "^4.1.0",
     "power-assert": "^1.6.1",
     "typescript": "^3.5.1"
   }

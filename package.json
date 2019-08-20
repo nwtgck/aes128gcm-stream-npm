@@ -21,7 +21,7 @@
   "homepage": "https://github.com/nwtgck/aes128gcm-stream-npm#readme",
   "devDependencies": {
     "@types/jasmine": "^3.4.0",
-    "@types/node": "^10.14.14",
+    "@types/node": "^10.14.16",
     "@types/power-assert": "^1.5.0",
     "jasmine-core": "^3.4.0",
     "karma": "^4.2.0",

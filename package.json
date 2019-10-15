@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/nwtgck/aes128gcm-stream-npm#readme",
   "devDependencies": {
-    "@types/jasmine": "^3.4.2",
-    "@types/node": "^10.14.20",
+    "@types/jasmine": "^3.4.4",
+    "@types/node": "^10.14.21",
     "@types/power-assert": "^1.5.0",
     "jasmine-core": "^3.5.0",
     "karma": "^4.3.0",
@@ -30,6 +30,6 @@
     "karma-jasmine": "^2.0.1",
     "karma-typescript": "^4.1.1",
     "power-assert": "^1.6.1",
-    "typescript": "^3.6.3"
+    "typescript": "^3.6.4"
   }
 }

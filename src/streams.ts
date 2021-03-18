@@ -1,6 +1,6 @@
 /* global ReadableStream TransformStream */
 
-export function transformStream(readable: ReadableStream<Uint8Array>, transformer: Transformer<Uint8Array, Uint8Array>, oncancel?: ReadableStreamErrorCallback): ReadableStream<Uint8Array> {
+export function transformStream(readable: ReadableStream<Uint8Array>, transformer: Transformer<Uint8Array, Uint8Array>, oncancel?: (reason?: any) => Promise<void>): ReadableStream<Uint8Array> {
   try {
     return readable.pipeThrough(new TransformStream(transformer));
   } catch (e) {

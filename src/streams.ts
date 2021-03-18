@@ -30,8 +30,7 @@ export function transformStream(readable: ReadableStream<Uint8Array>, transforme
             return controller.close();
           }
           // TODO: Don't use any
-          // @ts-ignore
-          await transformer.transform(data.value, wrappedController as any);
+          await transformer.transform!(data.value, wrappedController as any);
         }
       },
       cancel(reason) {

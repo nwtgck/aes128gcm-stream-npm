@@ -58,7 +58,7 @@ class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
         salt: this.salt,
         info: encoder.encode('Content-Encoding: aes128gcm\0'),
         hash: 'SHA-256'
-      } as any, // TODO: Don't use any
+      },
       inputKey,
       {
         name: 'AES-GCM',
@@ -86,7 +86,7 @@ class ECETransformer implements Transformer<Uint8Array, Uint8Array> {
           salt: this.salt,
           info: encoder.encode('Content-Encoding: nonce\0'),
           hash: 'SHA-256'
-        } as any,  // TODO: Don't use any
+        },
         inputKey,
         {
           name: 'AES-GCM',

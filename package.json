@@ -30,6 +30,6 @@
     "karma-jasmine": "^4.0.2",
     "karma-typescript": "^5.5.3",
     "power-assert": "^1.6.1",
-    "typescript": "^4.7.4"
+    "typescript": "^4.8.2"
   }
 }

@@ -24,7 +24,7 @@
     "@types/node": "^14.18.16",
     "@types/power-assert": "^1.5.8",
     "jasmine-core": "^4.1.0",
-    "karma": "^6.3.19",
+    "karma": "^6.4.1",
     "karma-chrome-launcher": "^3.1.1",
     "karma-cli": "^2.0.0",
     "karma-jasmine": "^4.0.2",
